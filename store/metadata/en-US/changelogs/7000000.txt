@@ -1,0 +1,9 @@
+Fulldive VR News is now a news reader, rebuilt from the ground up.
+
+• A single feed of VR and XR stories from Road to VR, UploadVR, MIXED, Skarred Ghost and more
+• Full stories in a clean, dark reading view
+• The publisher's own page opens inside the app, not in a separate browser
+• More stories load as you scroll; pull down to refresh
+• Topic tags on every story
+
+The Fulldive VR launcher is no longer part of this app.

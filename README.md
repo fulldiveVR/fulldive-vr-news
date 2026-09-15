@@ -28,9 +28,23 @@ build is recognised as an update of the existing app:
 | Palette | navy `#212E47`, orange `#FA8A19` | `main/src/main/res/values/colors.xml` |
 | Wordmark | `ic_logoassets_text_white.png` | `main/src/google/main/res/drawable-*` |
 
-`versionCode` is `7000000` (`version: 7.0.0+7000000` in `pubspec.yaml`), above
-the last Unity release's `6100211` — Play rejects anything lower as a
-downgrade.
+`versionCode` is `7000000` (`version: 7.0.0+7000000` in `pubspec.yaml`). The
+Unity project builds `in.fulldive.shell` as four artifacts — cardboard and
+daydream, each for armeabi-v7a and arm64-v8a — and its formula
+(`major*1_000_000 + minor*10_000 + patch*100 + order*10 + abi`) puts the
+highest of them at `6100221` for version 6.10.2:
+
+| variant | abi | versionCode |
+| --- | --- | --- |
+| cardboard | armeabi-v7a | 6100210 |
+| cardboard | arm64-v8a | 6100211 |
+| daydream | armeabi-v7a | 6100220 |
+| daydream | arm64-v8a | **6100221** |
+
+So `7000000` clears the whole set. Play rejects anything at or below what is
+already published, so check the live versionCode in the Play Console before a
+release — the number in the Unity repo only reflects what that source tree
+would build.
 
 ## Building
 
@@ -180,6 +194,20 @@ GCLOUD_ACCOUNT=you@fulldive.com tools/deploy_firestore_rules.sh
 Writes are closed to clients; the seeder and the future service write with
 privileged credentials, which bypass rules.
 
+## Google Play
+
+The listing lives in [`store/`](store/README.md): the release plan, the text
+in `store/metadata/en-US/` (fastlane `supply` layout) and the artwork, which is
+generated from the app's own screenshots rather than drawn by hand:
+
+```bash
+python3 tools/store_assets.py   # icon, feature graphic, phone screenshots
+```
+
+This ships as an **update to the existing `in.fulldive.shell` listing**, so read
+`store/README.md` before the first upload — it covers the Play App Signing
+check, the category and content-rating changes, and the open decisions.
+
 ## Filling the collection
 
 See [`tools/news_seeder/README.md`](tools/news_seeder/README.md). In short:
@@ -207,5 +235,10 @@ lib/
 tools/
   news_seeder/                       Firestore bootstrap script
   build_release.sh                   Builds and names the aab/apk
+  store_assets.py                    Renders the Play listing artwork
   deploy_firestore_rules.sh          Publishes firestore.rules
+store/
+  README.md                          Play release plan and checklist
+  metadata/en-US/                    Listing text and images (fastlane layout)
+  screenshots/raw/                   Device captures the artwork is built from
 ```
