@@ -25,8 +25,19 @@ VERSION="$(sed -n 's/^version: *\([0-9][^+ ]*\).*/\1/p' pubspec.yaml)"
 
 if [[ $# -eq 0 ]]; then targets=(aab apk); else targets=("$@"); fi
 
-if [[ -z "${FULLDIVE_KEYSTORE_PASSWORD:-}" ]]; then
-  echo "warning: FULLDIVE_KEYSTORE_PASSWORD is unset — building with the debug keys." >&2
+# Gradle quietly falls back to the debug keys when these are missing, which on
+# CI would produce an artifact Play rejects. Fail loudly instead.
+if [[ -z "${FULLDIVE_KEYSTORE_PASSWORD:-}" || -z "${FULLDIVE_ALIAS:-}" || -z "${FULLDIVE_ALIAS_PASSWORD:-}" ]]; then
+  if [[ "${ALLOW_DEBUG_SIGNING:-}" == "1" ]]; then
+    echo "warning: signing credentials are unset — building with the debug keys." >&2
+  else
+    echo "error: FULLDIVE_KEYSTORE_PASSWORD, FULLDIVE_ALIAS and FULLDIVE_ALIAS_PASSWORD must be set." >&2
+    echo "       Set ALLOW_DEBUG_SIGNING=1 to build an unpublishable debug-signed artifact anyway." >&2
+    exit 1
+  fi
+elif [[ ! -f keys/keys.jks ]]; then
+  echo "error: keys/keys.jks is missing — restore it or inject it from CI credentials." >&2
+  exit 1
 fi
 
 mkdir -p "$OUT_DIR"
