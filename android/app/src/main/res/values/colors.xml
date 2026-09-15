@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fulldive brand palette, taken from the Unity shell app. -->
+    <color name="ic_launcher_background">#212E47</color>
+    <color name="fulldive_navy">#212E47</color>
+    <color name="fulldive_orange">#FA8A19</color>
+</resources>
