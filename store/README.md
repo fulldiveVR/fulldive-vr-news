@@ -225,10 +225,14 @@ transparency about who is behind the app.
   Browser by Fulldive Co.?" → Yes.** Fulldive publishes its own app; there is
   no separate news organisation behind it. *No* is for publishing on behalf of
   someone else's newsroom.
-- **Content** — answer as an aggregator: no original reporting, every story
-  belongs to the publication that wrote it and links back to the source.
-- **Credentials** — press accreditation or media registration. An aggregator
-  normally has none, and that is fine.
+- **Content — category: Commercial / private**, and **"Is your app a news or
+  magazine aggregator?" → Yes.** Fulldive Co. is a private company, not a
+  non-profit or a public broadcaster; and the app carries no original
+  reporting — every story belongs to the publication that wrote it and links
+  back to the source.
+- **Credentials** — press accreditation or media registration. Declaring the
+  app an aggregator should keep this light: those are asked of applicants who
+  claim their own newsroom. Having none is fine.
 
 Declaring ourselves an aggregator here sits awkwardly against storing the full
 article body (§6). Behaving like one — headline, excerpt, link — would make the
@@ -298,6 +302,32 @@ field is malformed — format problems arrive as `INVALID_ARGUMENT` naming the
 field. In practice it means the en-US listing is missing part of the required
 set: icon, feature graphic and at least two phone screenshots must all be
 present when you save.
+
+## 5c. Leftover monetization products
+
+The Console still carries two products from the Unity app:
+
+- subscription **`subscription.player`**
+- in-app product **`support_fulldive_team`**
+
+The new build cannot sell either. The release APK contains no billing code at
+all — zero references to `BillingClient`, `com.android.vending.billing`,
+`ProductDetails` or `SkuDetails` — and no `com.android.vending.BILLING`
+permission:
+
+```bash
+strings /tmp/apk/classes.dex | grep -ci billingclient   # 0
+```
+
+They are also at odds with what we declared: the IARC questionnaire answers
+"allows users to purchase digital goods" with **No**. Deactivate them rather
+than carrying them forward — Play only demands per-locale translations for
+*active* products, so deactivating clears that requirement too.
+
+**Check for active subscribers first.** Deactivating a subscription stops new
+purchases and does not itself cancel existing ones, but if anyone is still
+subscribed to `subscription.player` that is a commercial decision, not
+housekeeping. The one-off `support_fulldive_team` is safe to retire.
 
 ## 6. Open decisions — needed before production
 

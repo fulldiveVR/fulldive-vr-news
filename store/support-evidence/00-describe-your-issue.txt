@@ -1,0 +1,17 @@
+Our complete store listing draft cannot be published. Every save returns
+gRPC 9 FAILED_PRECONDITION with detail "CgoItgESBWVuLVVT", which decodes to
+StoreListingError {code:182, locale:"en-US"}.
+
+The error is byte-identical no matter what I change, including a save whose
+only change was the AI asset declaration. Already ruled out: missing assets;
+listing experiments (none); privacy policy (returns HTTP 200); a review lock
+(managed publishing is off); legacy in-app products (deactivated and deleted);
+a damaged locale record (I deleted en-US and recreated it - same error). Every
+other section saves normally. Only the store listing refuses.
+
+The listing live in production still contains links to APK downloads outside
+Play and crypto-earning claims, published years ago. If a policy check against
+that stored text is what fails the precondition, I cannot fix it myself: the
+fix requires the publish that the check blocks.
+
+App ID 4974715307560072894. Full detail and screenshots attached.
