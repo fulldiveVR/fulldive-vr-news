@@ -4,7 +4,7 @@ publish_to: 'none'
 
 # The build number must stay above the last Unity shell release (6100211),
 # otherwise Google Play refuses the upload as a downgrade.
-version: 7.0.2+7000002
+version: 7.0.3+7000003
 
 environment:
   sdk: ^3.11.4

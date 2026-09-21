@@ -4,6 +4,7 @@ import '../data/news_feed_controller.dart';
 import '../theme/fulldive_theme.dart';
 import '../widgets/fulldive_brand.dart';
 import '../widgets/news_card.dart';
+import 'contact_screen.dart';
 import 'news_article_screen.dart';
 
 /// Home screen: the paginated VR news feed.
@@ -49,6 +50,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
       appBar: AppBar(
         title: const FulldiveWordmarkTitle(),
         centerTitle: false,
+        actions: const [_FeedMenu()],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(height: 1),
@@ -151,13 +153,26 @@ class _FeedFooter extends StatelessWidget {
 
     if (controller.hasMore) return const SizedBox(height: 8);
 
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Text(
-          "That's everything for now",
-          style: TextStyle(fontSize: 13, color: FulldiveColors.textTertiary),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Column(
+        children: [
+          const Text(
+            "That's everything for now",
+            style: TextStyle(fontSize: 13, color: FulldiveColors.textTertiary),
+          ),
+          const SizedBox(height: 4),
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  Navigator.of(context).push(ContactScreen.route()),
+              style: TextButton.styleFrom(
+                foregroundColor: FulldiveColors.orange,
+              ),
+              child: const Text('Contact us'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -212,6 +227,34 @@ class _FeedMessage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The feed's overflow menu. Contact details have to be easy to find in the
+/// app itself under Play's News and Magazines policy, so the entry is spelled
+/// out in words here and repeated as a link at the end of the feed.
+class _FeedMenu extends StatelessWidget {
+  const _FeedMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<void>(
+      tooltip: 'More',
+      icon: const Icon(Icons.more_vert),
+      color: FulldiveColors.navySurface,
+      itemBuilder: (context) => [
+        PopupMenuItem<void>(
+          onTap: () => Navigator.of(context).push(ContactScreen.route()),
+          child: const Row(
+            children: [
+              Icon(Icons.mail_outline, size: 20, color: FulldiveColors.orange),
+              SizedBox(width: 12),
+              Text('Contact us'),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

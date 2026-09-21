@@ -15,8 +15,11 @@ BUILT LIGHT
 
 No account. No sign-up. No notifications you did not ask for. The app opens straight into the news and asks for nothing but an internet connection.
 
-ABOUT THIS UPDATE
+WHO MAKES IT
 
-This app used to be the Fulldive VR launcher. It has been rebuilt as a news reader for virtual and mixed reality, and the launcher is no longer part of it.
+Fulldive VR News is a news aggregator published by Fulldive. It carries no reporting of its own — every story belongs to the publication that wrote it, is credited to its author, and links back to the publisher's own page.
 
-Headlines, images and excerpts belong to the publications that wrote them, and every story links back to the original.
+Questions, bugs, or a publisher who wants their feed removed: support@fulldive.com
+Contact us: https://fulldive.com/pages/contact-us/
+Privacy policy: https://fulldive.com/privacy-policy/
+Terms of use: https://fulldive.com/terms-of-use/

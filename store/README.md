@@ -268,11 +268,11 @@ re-run `tools/store_assets.py`.
 3. Play Console → **Testing → Internal testing** → upload the `.aab`, add
    testers, install over a copy of the old app and confirm it updates in place
    rather than installing alongside.
-4. Update the store listing in **one pass**, then save: name, descriptions,
-   icon, feature graphic, screenshots. Replace the old VR launcher images
-   rather than deleting them first — Play requires an icon, a feature graphic
-   and at least two phone screenshots to be present, so saving a listing that
-   is momentarily short of them fails.
+4. Push the store listing with `tools/play_listing.py push --for-review
+   --lang en-US` rather than editing it in the Console. See 5b for why. It
+   sends name, descriptions, icon, feature graphic and screenshots in one
+   commit, which also satisfies Play's rule that an icon, a feature graphic and
+   at least two phone screenshots must all be present at every save.
 5. Re-run the content rating questionnaire and the Data safety form.
 6. Set the category to News & Magazines.
 7. **Production → staged rollout, starting small.** This update changes what
@@ -297,11 +297,36 @@ python3 -c 'import base64; print(base64.b64decode("CgoItgESBWVuLVVT").hex(" "))'
 # 0a 0a 08 b6 01 12 05 65 6e 2d 55 53  ->  { code: 182, locale: "en-US" }
 ```
 
-`FAILED_PRECONDITION` means the listing is in an incomplete state, not that a
-field is malformed — format problems arrive as `INVALID_ARGUMENT` naming the
-field. In practice it means the en-US listing is missing part of the required
-set: icon, feature graphic and at least two phone screenshots must all be
-present when you save.
+That code is **not** about a missing icon or screenshot — ours were all in
+place, in the draft and in storage. It was a stale field the Console form can
+no longer write: the en-US listing carried a promo video stored as
+`https://youtu.be/k9QPMD3zvg8`. Play now accepts only the
+`https://www.youtube.com/watch?v=...` form, so every save failed a precondition
+on a value the form never resubmits — which is why the error was byte-identical
+whatever we changed, and why it named `en-US`, the only locale with a video.
+
+**The fix goes through the public API, not the Console.** `tools/play_listing.py`
+talks to androidpublisher v3, which can write fields the Console form cannot and
+returns readable errors instead of numeric codes:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=../creds.txt   # google-play-uploader@full-dive-co
+tools/play_listing.py read                 # dump what Play has stored, per locale
+tools/play_listing.py validate --lang en-US # apply store/metadata, validate, discard
+tools/play_listing.py push --for-review --lang en-US
+```
+
+Two things to know before using it:
+
+- **There is no draft.** `changesNotSentForReview=true` is rejected for this app
+  ("Changes are sent for review automatically"), so `push` submits for review.
+  Use `validate` for dry runs.
+- **`video.txt` controls the promo video.** `store/metadata/en-US/` has no such
+  file, so each push clears the field. Add one to set a video back.
+
+The old VR-era listing is preserved in `play-stored-listing.json` — it is what
+`read` dumped before the replacement, including the APK links and the
+crypto-earning claims.
 
 ## 5c. Leftover monetization products
 
@@ -348,29 +373,136 @@ Road to VR, UploadVR, MIXED and Skarred Ghost. That is ordinary for an
 aggregator, but it does use their names to market the app, and it commits us to
 keeping those feeds. Drop the names if that is not wanted.
 
-**Privacy policy URL — this one blocks the Console itself.** Play requires a
-policy URL for every app, and it validates the *whole* listing on every save.
-While the URL is unreachable, nothing can be saved: even toggling the
-AI-content declaration fails with `FAILED_PRECONDITION` / StoreListingError
-code 182 on en-US, identically, whatever you change.
-
-The chain, as measured:
-
-```
-https://fulldive.com/…   →  301  →  https://browser.fulldive.com/
-browser.fulldive.com     →  no DNS record
-```
-
-So Play follows the redirect and reports "DNS name could not be found".
-Changing the *path* under `fulldive.com` does not help — the redirect is at the
-domain level, so every URL there lands on the same dead host. Fix it by
-restoring DNS for `browser.fulldive.com`, or by dropping the redirect so
-`fulldive.com` serves the policy directly. `static.fdvr.co` is alive (200, with
-proper 404s) and works as a stopgap host, though a policy on a static CDN
-domain is a poor look for anything but the short term.
+~~**Privacy policy URL**~~ — resolved. This section used to record
+`browser.fulldive.com` as having no DNS record, which made every listing save
+fail with `FAILED_PRECONDITION` / StoreListingError 182 on en-US. Both hosts
+now resolve and answer 200, and the policy is live at
+`https://fulldive.com/privacy-policy/`. **Keep the trailing slash** — without
+it the site answers 308, and Play follows redirects rather than accepting
+them. See §7.2 for the full set of URLs.
 
 **Content freshness.** The feed is filled by a manual script run. Until the
 content service exists, the app ships with a snapshot that ages, which is a bad
 first impression for a news app — the top story's timestamp is the first thing
 a user sees. Either run the seeder right before release, or hold the rollout
 until the service is live.
+
+---
+
+## 7. The News and Magazines rejection (enforced 21 Sep 2026)
+
+Play removed the previous version under the **News and Magazines policy**. The
+single finding was contact information:
+
+> Doesn't contain a dedicated website and in-app page that's easy to find and
+> clearly shows relevant contact information.
+
+The other four bullets in the notice ("content less than three months old",
+"original sources for all articles") were measured against the live feed and
+already pass — see *Checked, not assumed* below. Only contact details need
+work: in the app, and in the three Console fields that point at the website.
+
+### 7.1 In the app — done in `7.0.3` (versionCode `7000003`)
+
+`lib/src/screens/contact_screen.dart` is a full-screen **Contact us** page:
+support email, the contact, privacy and terms pages, publisher name and the
+app version,
+plus a paragraph saying the app is an aggregator and how a publisher asks for
+their feed to be dropped. Reachable two ways, because "easy to find" is the
+part that was failed:
+
+- the feed's overflow menu (⋮), where the item is spelled out in words
+- a **Contact us** link at the end of the feed
+
+The publisher is named **Fulldive Corp.**, matching the privacy policy and the
+terms of use. The Play account displays "Browser by Fulldive Co."; that stays
+the answer to the declaration's *Entity details* question, which asks about the
+developer account rather than about the company.
+
+The address is rendered as selectable plain text with a copy button, not only
+as a tappable link — a review device often has no mail client, and a `mailto:`
+that opens nothing reads as "no contact information". `FulldiveContact` holds
+the values; `test/contact_details_test.dart` keeps the version in step with
+`pubspec.yaml` and asserts the page really renders the address.
+
+### 7.2 On the website — the pages exist, at these URLs
+
+The canonical pages, confirmed live on 21 Sep 2026:
+
+| Page | URL |
+| --- | --- |
+| Contact us | `https://fulldive.com/pages/contact-us/` |
+| Privacy policy | `https://fulldive.com/privacy-policy/` |
+| Terms of use | `https://fulldive.com/terms-of-use/` |
+
+**The trailing slash is not optional.** Without it fulldive.com answers `308`,
+and the site serves its homepage — with HTTP 200 — for every path it does not
+recognise, including `/contact`, `/contact-us`, `/support` and `/about`. So a
+guessed or shortened URL does not fail loudly; it quietly returns a page with
+no contact section on it, which is very likely how the review reached
+"doesn't contain a dedicated website … page". Use the three URLs above
+verbatim, everywhere.
+
+One thing worth fixing on the contact page: the address is wrapped in
+Cloudflare's Email Address Obfuscation, so the HTML says
+
+```html
+<span class="__cf_email__" data-cfemail="1261…">[email&#160;protected]</span>
+```
+
+and only JavaScript turns it back into `support@fulldive.com`. A human
+reviewer with a browser sees the address; anything fetching the page without
+running scripts does not. The plain address appears in the page's JSON-LD
+(`"email":"support@fulldive.com"`) and nowhere else in the markup. Turning
+obfuscation off for the page (Cloudflare → Scrape Shield), or repeating the
+address as ordinary text next to the link, removes the doubt for the cost of
+a little more spam.
+
+### 7.3 In the Play Console — manual, cannot be done through the API
+
+`androidpublisher` v3 writes title, descriptions and graphics only; contact
+details are not in the `Listing` resource, so `tools/play_listing.py` cannot
+set them.
+
+| Where | What to set |
+| --- | --- |
+| Store listing → **Store listing contact details** | Email `support@fulldive.com`; Website `https://fulldive.com/pages/contact-us/`; phone optional |
+| App content → **Privacy policy** | `https://fulldive.com/privacy-policy/` |
+| App content → **News and magazine apps** declaration | Contact information URL → `https://fulldive.com/pages/contact-us/` (the notice asks specifically for this to be updated) |
+
+Social accounts do not count as contact information, so the Discord link on
+the contact page satisfies nothing here — the email does.
+
+### 7.4 Checked, not assumed
+
+Measured against the live `news` collection on 21 Sep 2026, 60 documents:
+
+| Notice bullet | State |
+| --- | --- |
+| Content less than three months old | ✅ oldest 2 Sep 2026, newest 15 Sep 2026 |
+| Original source (author or publisher) for every article | ✅ 0 of 60 missing `author`, `sourceName` or `sourceUrl` |
+
+Reproduce without credentials — the `news` collection is world-readable:
+
+```bash
+KEY=$(python3 -c "import json;print(json.load(open('android/app/google-services.json'))['client'][0]['api_key'][0]['current_key'])")
+curl -sS -X POST "https://firestore.googleapis.com/v1/projects/full-dive-co/databases/main/documents:runQuery?key=$KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"structuredQuery":{"from":[{"collectionId":"news"}],"select":{"fields":[{"fieldPath":"publishedAt"},{"fieldPath":"author"}]}}}'
+```
+
+Freshness is only true today because the seeder was run recently. Run it again
+right before resubmitting: an appeal reviewer opening a feed whose top story is
+months old re-reads the same policy differently.
+
+### 7.5 Order of work
+
+1. Set the three Console fields to the exact URLs in 7.2 — with trailing
+   slashes. This is the likeliest cause of the finding: whatever the Console
+   and the declaration form pointed at before, it resolved to the homepage.
+2. Optional but cheap: un-obfuscate the address on the contact page (7.2).
+3. `tools/news_seeder` — refresh the feed.
+4. `tools/build_release.sh aab` → upload `7000003` → resubmit.
+5. Only then **Submit an appeal** on the policy notice, describing 7.1–7.3.
+   Appealing before the fixes are live spends the 5–8 day wait on a review
+   that will find the same thing.

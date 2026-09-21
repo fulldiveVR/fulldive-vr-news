@@ -1,0 +1,4 @@
+Contact details are now inside the app.
+
+• A Contact us page — support email, website and privacy policy — in the feed menu and at the end of the feed
+• Every story still names the publication and the writer behind it, and opens the publisher's own page on request

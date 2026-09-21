@@ -10,6 +10,9 @@ sitting alongside it.
   you approach the end of the list.
 - **Reader** — full story on its own screen, with the publisher's page opening
   in an in-app browser rather than handing the reader off to Chrome.
+- **Contact us** — publisher, support email, website and privacy policy on
+  their own page, reached from the feed menu and the end of the feed. Play's
+  News and Magazines policy requires it; see `store/README.md` §7.
 - **Backend** — Cloud Firestore, read anonymously. Stories are written by
   `tools/news_seeder` today and by a content service later.
 
@@ -28,7 +31,7 @@ build is recognised as an update of the existing app:
 | Palette | navy `#212E47`, orange `#FA8A19` | `main/src/main/res/values/colors.xml` |
 | Wordmark | `ic_logoassets_text_white.png` | `main/src/google/main/res/drawable-*` |
 
-`versionCode` is `7000000` (`version: 7.0.0+7000000` in `pubspec.yaml`). The
+`versionCode` is `7000003` (`version: 7.0.3+7000003` in `pubspec.yaml`). The
 Unity project builds `in.fulldive.shell` as four artifacts — cardboard and
 daydream, each for armeabi-v7a and arm64-v8a — and its formula
 (`major*1_000_000 + minor*10_000 + patch*100 + order*10 + abi`) puts the
