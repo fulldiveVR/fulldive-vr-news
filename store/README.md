@@ -475,12 +475,20 @@ the contact page satisfies nothing here — the email does.
 
 ### 7.4 Checked, not assumed
 
-Measured against the live `news` collection on 21 Sep 2026, 60 documents:
+Measured against the live `news` collection after re-seeding on 21 Sep 2026,
+109 documents:
 
 | Notice bullet | State |
 | --- | --- |
-| Content less than three months old | ✅ oldest 2 Sep 2026, newest 15 Sep 2026 |
-| Original source (author or publisher) for every article | ✅ 0 of 60 missing `author`, `sourceName` or `sourceUrl` |
+| Content less than three months old | ✅ oldest 2 Sep 2026, newest 21 Sep 2026 — the whole collection is under three weeks old |
+| Original source (author or publisher) for every article | ✅ 0 of 109 missing `author`, `sourceName` or `sourceUrl` |
+
+The seeder writes `news/{sha1(sourceUrl)}`, so a re-run updates the stories it
+already knows and adds the new ones — it never prunes. That is why the count
+went 60 → 109 rather than staying at `--limit`. Harmless for the feed, which
+is sorted newest-first and paginated, but the collection will keep growing; if
+it ever needs trimming, delete by `publishedAt` rather than lowering the
+limit.
 
 Reproduce without credentials — the `news` collection is world-readable:
 
