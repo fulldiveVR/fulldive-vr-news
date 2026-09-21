@@ -15,6 +15,10 @@ pass --key.
   ./play_listing.py validate             # apply store/metadata, validate, discard
   ./play_listing.py push                 # apply, validate, commit
   ./play_listing.py push --for-review    # commit and submit for review
+
+Play decides which of those two is allowed. Right now this app refuses the
+automatic path, so plain `push` is the one that works: it saves the listing
+as a pending change, and the Console's "Send for review" submits it.
 """
 
 import argparse
@@ -197,12 +201,31 @@ def cmd_apply(s, args, commit):
             call(s, "DELETE",
                  f"{API}/applications/{PACKAGE}/edits/{edit_id}/listings/{lang}")
 
+        # Whether review is automatic is a property of the app, and it has
+        # changed under us at least once: this app first refused
+        # changesNotSentForReview and now demands it. :commit takes the flag;
+        # :validate has no such field and rejects it as an unknown parameter,
+        # which leaves nothing to validate with while the app is in this
+        # state. :commit validates server-side anyway, so a validate that
+        # fails for this one reason is stepped over rather than treated as a
+        # broken listing.
+        q = "" if args.for_review else "?changesNotSentForReview=true"
+
         print("\nvalidating…")
-        call(s, "POST", f"{API}/applications/{PACKAGE}/edits/{edit_id}:validate")
-        print("validate: OK")
+        try:
+            call(s, "POST",
+                 f"{API}/applications/{PACKAGE}/edits/{edit_id}:validate")
+            print("validate: OK")
+        except ApiError as e:
+            if "cannot be sent for review automatically" not in str(e):
+                raise
+            print("validate: skipped — Play will not review this app's changes\n"
+                  "          automatically, and :validate cannot be told that.\n"
+                  "          The commit below validates the same listing.")
+            if not commit:
+                print("\nNothing to do for a dry run; use push.")
 
         if commit:
-            q = "" if args.for_review else "?changesNotSentForReview=true"
             call(s, "POST",
                  f"{API}/applications/{PACKAGE}/edits/{edit_id}:commit{q}")
             committed = True

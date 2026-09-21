@@ -318,9 +318,18 @@ tools/play_listing.py push --for-review --lang en-US
 
 Two things to know before using it:
 
-- **There is no draft.** `changesNotSentForReview=true` is rejected for this app
-  ("Changes are sent for review automatically"), so `push` submits for review.
-  Use `validate` for dry runs.
+- **Which commit mode is allowed is Play's choice, and it has flipped.** This
+  app first rejected `changesNotSentForReview=true` ("Changes are sent for
+  review automatically"); since the September 2026 enforcement it demands it
+  and refuses to submit anything automatically. So plain `push` is the one
+  that works today, and it saves a pending change that the Console's **Send
+  for review** submits; `push --for-review` fails. Re-read the error if that
+  ever changes back — it says which mode the app is in.
+- **`:validate` is unusable in that state.** It has no
+  `changesNotSentForReview` field, and without one Play refuses to validate at
+  all. `play_listing.py` steps over that one error and lets `:commit` do the
+  validating, which it does server-side anyway. A `validate` dry run therefore
+  reports nothing useful for this app right now; `push` is the real check.
 - **`video.txt` controls the promo video.** `store/metadata/en-US/` has no such
   file, so each push clears the field. Add one to set a video back.
 
